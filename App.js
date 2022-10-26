@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useReft } from "react";
 import {
   StyleSheet,
   View,
@@ -15,6 +15,9 @@ import {
   Linking,
   StatusBar,
   TouchableOpacity,
+  Animated,
+  Easing,
+  Vibration,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import pokemonList from "./pokeList";
@@ -27,6 +30,31 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTouchVisible, setModalTouchVisible] = useState(false);
+
+  const animatedValue = React.useRef(new Animated.Value(0)).current;
+
+  const timingAnimation = (easing) => {
+    animatedValue.setValue(0);
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 5000,
+      useNativeDriver: false,
+      easing,
+    }).start();
+  };
+
+  const size = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 280],
+  });
+
+  const animatedStyles = [
+    {
+      animatedValue,
+      width: size,
+      height: size,
+    },
+  ];
 
   const [Url, setUrl] = useState("");
 
@@ -73,6 +101,7 @@ const App = () => {
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => {
+              timingAnimation(Easing.bounce);
               setUrl(item.url);
               setModalTouchVisible((previousState) => !previousState);
             }}
@@ -86,6 +115,7 @@ const App = () => {
           <Button
             title="Ver imagen"
             onPress={() => {
+              Vibration.vibrate();
               setModalVisible((previousState) => !previousState);
               setUrl(item.url);
             }}
@@ -130,11 +160,7 @@ const App = () => {
           </View>
         </View>
       </Modal>
-      <Modal
-        transparent={true}
-        visible={modalTouchVisible}
-        animationType="slide"
-      >
+      <Modal transparent={true} visible={modalTouchVisible}>
         <View
           style={{
             justifyContent: "center",
@@ -144,8 +170,10 @@ const App = () => {
           }}
         >
           <View style={styles.webView}>
-            <WebView source={{ uri: Url }} />
-            <Button title="Cerrar" onPress={setModalTouchVisible} />
+            <Animated.View style={animatedStyles}>
+              <WebView source={{ uri: Url }} />
+              <Button title="Cerrar" onPress={setModalTouchVisible} />
+            </Animated.View>
           </View>
         </View>
       </Modal>
